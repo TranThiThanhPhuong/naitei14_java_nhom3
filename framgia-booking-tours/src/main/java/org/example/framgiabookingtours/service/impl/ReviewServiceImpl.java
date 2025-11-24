@@ -43,7 +43,7 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         // Kiểm tra booking đã hoàn thành
-        if (booking.getStatus() != BookingStatus.COMPLETED) {
+        if (booking.getStatus() != BookingStatus.PAID) {
             throw new AppException(ErrorCode.BOOKING_NOT_COMPLETED);
         }
 
