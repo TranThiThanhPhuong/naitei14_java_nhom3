@@ -19,9 +19,13 @@ public enum ErrorCode {
     ROLE_NOT_FOUND(1010, "Role not found", HttpStatus.NOT_FOUND),
     PERMISSION_NOT_FOUND(1011, "Permission not found", HttpStatus.NOT_FOUND),
     ACCOUNT_LOCKED(1012, "Account is locked", HttpStatus.FORBIDDEN),
-    TOUR_NOT_ENOUGH_SLOTS(1013, "Tour không đủ chỗ. Chỉ còn %d chỗ", HttpStatus.BAD_REQUEST),
+    TOUR_NOT_ENOUGH_SLOTS(1013, "Tour does not have enough slots. Only %d slots available", HttpStatus.BAD_REQUEST),
     TOUR_NOT_FOUND(1014, "Tour not found", HttpStatus.NOT_FOUND),
-    TOUR_NOT_AVAILABLE(1015, "Tour not available now", HttpStatus.NOT_FOUND);;
+    TOUR_NOT_AVAILABLE(1015, "Tour not available now", HttpStatus.NOT_FOUND),
+    BOOKING_NOT_FOUND(1016, "Booking not found", HttpStatus.NOT_FOUND),
+    BOOKING_NOT_COMPLETED(1017, "Booking is not completed, cannot create review", HttpStatus.BAD_REQUEST),
+    REVIEW_ALREADY_EXISTS(1018, "Review already exists for this booking", HttpStatus.BAD_REQUEST),
+    BOOKING_NOT_BELONG_TO_USER(1019, "Booking does not belong to this user", HttpStatus.FORBIDDEN);;
 
     ErrorCode(int code, String message, HttpStatusCode httpStatusCode) {
         this.code = code;
