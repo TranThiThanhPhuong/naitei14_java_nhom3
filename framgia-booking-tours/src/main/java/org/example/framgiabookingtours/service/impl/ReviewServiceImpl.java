@@ -114,4 +114,30 @@ public class ReviewServiceImpl implements ReviewService {
                 .updatedAt(updatedReview.getUpdatedAt())
                 .build();
     }
+
+    @Override
+    @Transactional
+    public void deleteReview(Long reviewId, String userEmail) {
+        // Tìm user
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        // Tìm review
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+
+        // Kiểm tra review có bị xóa không
+        if (review.getIsDeleted()) {
+            throw new AppException(ErrorCode.REVIEW_NOT_FOUND);
+        }
+
+        // Kiểm tra review thuộc về user (thông qua booking)
+        if (!review.getBooking().getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.REVIEW_NOT_BELONG_TO_USER);
+        }
+
+        // Soft delete: đánh dấu là đã xóa
+        review.setIsDeleted(true);
+        reviewRepository.save(review);
+    }
 }

@@ -49,4 +49,19 @@ public class ReviewController {
                 .result(response)
                 .build();
     }
+
+    @DeleteMapping("/{reviewId}")
+    public ApiResponse<Void> deleteReview(
+            @PathVariable Long reviewId,
+            @RequestHeader(value = "X-User-Email", required = false) String headerEmail,
+            Authentication authentication) {
+
+        String userEmail = (authentication != null) ? authentication.getName() : headerEmail;
+        reviewService.deleteReview(reviewId, userEmail);
+
+        return ApiResponse.<Void>builder()
+                .code(1000)
+                .message("Review deleted successfully")
+                .build();
+    }
 }

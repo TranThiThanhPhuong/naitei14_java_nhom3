@@ -9,4 +9,6 @@ public interface ReviewService {
     ReviewResponseDTO createReview(ReviewRequestDTO request, String userEmail);
 
     ReviewResponseDTO updateReview(Long reviewId, UpdateReviewRequestDTO request, String userEmail);
+
+    void deleteReview(Long reviewId, String userEmail);
 }
