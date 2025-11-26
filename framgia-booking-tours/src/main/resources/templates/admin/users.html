@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản Lý Người Dùng - Framgia Booking Admin</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" th:href="@{/admin.css}">
+</head>
+<body class="bg-gray-50">
+
+	<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+	<div class="ml-64">
+		<div th:replace="~{fragments/header :: header}"></div>
+
+		<main class="p-8">
+			<div class="bg-white rounded-xl shadow-md overflow-hidden">
+				<div
+					class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
+					<div class="flex justify-between items-center">
+						<div>
+							<h3 class="text-2xl font-bold text-gray-900">Quản Lý Người
+								Dùng</h3>
+							<p class="text-sm text-gray-600 mt-1">Danh sách toàn bộ người
+								dùng trong hệ thống</p>
+						</div>
+					</div>
+
+					<form th:action="@{/admin/users}" method="get"
+						class="mt-4 flex flex-wrap gap-3">
+						<select name="status"
+							class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+							<option value="">Tất cả trạng thái</option>
+							<option value="ACTIVE" th:selected="${param.status == 'ACTIVE'}">Active</option>
+							<option value="INACTIVE"
+								th:selected="${param.status == 'INACTIVE'}">Inactive</option>
+						</select> <select name="provider"
+							class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+							<option value="">Tất cả Provider</option>
+							<option value="LOCAL" th:selected="${param.provider == 'LOCAL'}">Local</option>
+							<option value="GOOGLE"
+								th:selected="${param.provider == 'GOOGLE'}">Google</option>
+							<option value="FACEBOOK"
+								th:selected="${param.provider == 'FACEBOOK'}">Facebook</option>
+						</select> <select name="role"
+							class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+							<option value="">Tất cả Role</option>
+							<option value="ADMIN" th:selected="${param.role == 'ADMIN'}">Admin</option>
+							<option value="USER" th:selected="${param.role == 'USER'}">User</option>
+						</select> <input type="text" name="keyword" th:value="${param.keyword}"
+							placeholder="Tìm theo email hoặc tên..."
+							class="flex-1 min-w-[300px] border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+
+						<button type="submit"
+							class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm transition">
+							<i class="fas fa-filter mr-2"></i>Lọc
+						</button>
+					</form>
+				</div>
+
+				<div class="overflow-x-auto">
+					<table class="w-full">
+						<thead class="bg-gray-50 border-b border-gray-200">
+							<tr>
+								<th
+									class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
+								<th
+									class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Người
+									dùng</th>
+								<th
+									class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Email</th>
+								<th
+									class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">SĐT</th>
+								<th
+									class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Provider</th>
+								<th
+									class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Role</th>
+								<th
+									class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Trạng
+									thái</th>
+								<th
+									class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Hành
+									động</th>
+							</tr>
+						</thead>
+						<tbody class="bg-white divide-y divide-gray-200">
+							<tr th:each="user : ${users}" class="hover:bg-gray-50 transition">
+								<td class="px-6 py-4 text-sm font-medium text-gray-900"
+									th:text="'#' + ${user.id}">#1</td>
+								<td class="px-6 py-4">
+									<div class="flex items-center space-x-3">
+										<img
+											th:src="${user.profile != null && user.profile.avatarUrl != null ? user.profile.avatarUrl : 'https://ui-avatars.com/api/?name=' + user.email}"
+											alt="Avatar"
+											class="w-11 h-11 rounded-full border-2 border-gray-200">
+										<div>
+											<div class="text-sm font-semibold text-gray-900"
+												th:text="${user.profile != null ? user.profile.fullName : 'No Name'}">Full
+												Name</div>
+											<div class="text-xs text-gray-500"
+												th:text="'User ID: ' + ${user.id}">User ID: 1</div>
+										</div>
+									</div>
+								</td>
+								<td class="px-6 py-4 text-sm text-gray-900"
+									th:text="${user.email}">email@example.com</td>
+								<td class="px-6 py-4 text-sm text-gray-900"
+									th:text="${user.profile != null ? user.profile.phone : 'N/A'}">Phone</td>
+
+								<td class="px-6 py-4"><span
+									class="px-3 py-1 rounded-full text-xs font-semibold"
+									th:classappend="${user.provider != null && user.provider.name() == 'LOCAL'} ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800'"
+									th:text="${user.provider}">LOCAL</span></td>
+
+								<td class="px-6 py-4"><span
+									class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800"
+									th:text="${#lists.isEmpty(user.roles) ? 'USER' : user.roles[0].name}">USER</span>
+								</td>
+
+								<td class="px-6 py-4"><label class="toggle-switch">
+										<input type="checkbox"
+										th:checked="${user.status != null && user.status.name() == 'ACTIVE'}"
+										th:onclick="'toggleUserStatus(' + ${user.id} + ')'"> <span
+										class="slider"></span>
+								</label></td>
+
+								<td class="px-6 py-4 text-center">
+									<div class="flex items-center justify-center space-x-2">
+										<button th:onclick="'showUserDetail(' + ${user.id} + ')'"
+											class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition">
+											<i class="fas fa-eye mr-1"></i>Chi tiết
+										</button>
+									</div>
+								</td>
+							</tr>
+							<tr th:if="${#lists.isEmpty(users)}">
+								<td colspan="9" class="text-center py-4 text-gray-500">Không
+									tìm thấy người dùng nào.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div
+					class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+					<div class="text-sm text-gray-600">
+						Hiển thị <span class="font-semibold">1-10</span> trong tổng số <span
+							class="font-semibold">50</span> người dùng
+					</div>
+					<div class="flex space-x-2">
+						<button
+							class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-50"
+							disabled>
+							<i class="fas fa-chevron-left"></i>
+						</button>
+						<button
+							class="px-3 py-2 bg-blue-900 text-white rounded-lg text-sm">1</button>
+						<button
+							class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">2</button>
+						<button
+							class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">
+							<i class="fas fa-chevron-right"></i>
+						</button>
+					</div>
+				</div>
+			</div>
+		</main>
+
+		<div th:replace="~{fragments/footer :: footer}"></div>
+	</div>
+
+	<div id="modal-placeholder"></div>
+
+	<script th:inline="javascript">
+		// Hàm xử lý Toggle Status (sẽ làm ở Task #95204)
+		function toggleUserStatus(userId) {
+			console.log("Toggle status for user: " + userId);
+			// Call API update status here
+		}
+
+		// Hàm xử lý Show Detail (sẽ làm ở Task #95207)
+		function showUserDetail(userId) {
+			console.log("Show detail for user: " + userId);
+			// Open Modal logic here
+		}
+	</script>
+</body>
+</html>
