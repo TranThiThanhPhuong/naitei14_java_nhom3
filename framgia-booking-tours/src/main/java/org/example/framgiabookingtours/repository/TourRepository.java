@@ -12,6 +12,6 @@ import org.springframework.stereotype.Repository;
 
 public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificationExecutor<Tour> {
     
-	Page<Tour> findByStatus(TourStatus status, Pageable pageable);
+	// Page<Tour> findByStatus(TourStatus status, Pageable pageable);
 	
 } //Kế thừa JpaSpecificationExecutor để hỗ trợ lọc phức tạp (sẽ dùng trong F2)

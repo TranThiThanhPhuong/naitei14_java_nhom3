@@ -43,6 +43,17 @@ public class PublicTourController {
                 .result(tourPage)
                 .build());
     }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<TourResponseDTO>> getTourDetail(@PathVariable("id") Long tourId) {
+        TourResponseDTO tourDetail = tourService.getTourDetail(tourId);
+
+        return ResponseEntity.ok(ApiResponse.<TourResponseDTO>builder()
+                .code(1000)
+                .message("Lấy chi tiết tour thành công")
+                .result(tourDetail)
+                .build());
+    }
 
     @GetMapping("/{tourId}/reviews")
     public ResponseEntity<ApiResponse<Page<ReviewListItemDTO>>> getReviewsByTourId(

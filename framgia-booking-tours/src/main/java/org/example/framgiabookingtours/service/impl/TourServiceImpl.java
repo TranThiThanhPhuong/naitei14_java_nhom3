@@ -34,12 +34,10 @@ public class TourServiceImpl implements TourService {
         }
         
         Specification<Tour> spec = Specification
-                .where(TourSpecification.isAvailable()); // Chỉ lấy Tour AVAILABLE (F2.4)
-        
-        // 2. Thêm các điều kiện lọc và tìm kiếm (có thể null nếu không có tham số)
-        spec = spec.and(TourSpecification.hasKeyword(keyword));
-        spec = spec.and(TourSpecification.hasCategoryId(categoryId));
-        spec = spec.and(TourSpecification.hasPriceRange(minPrice, maxPrice));
+                .where(TourSpecification.isAvailable())
+                .and(TourSpecification.hasKeyword(keyword))
+                .and(TourSpecification.hasCategoryId(categoryId))
+                .and(TourSpecification.hasPriceRange(minPrice, maxPrice));
 
         Sort sort = Sort.by(direction, sortBy);
         
