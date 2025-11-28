@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title th:text="${pageTitle}">Chi Tiết User</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" th:href="@{/admin.css}">
+</head>
+<body class="bg-gray-50 font-sans">
+
+	<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+	<div class="ml-64">
+		<div th:replace="~{fragments/header :: header}"></div>
+
+		<main class="p-8">
+			<div class="flex justify-between items-center mb-6">
+				<div class="flex items-center gap-2 text-sm text-gray-600">
+					<a th:href="@{/admin/users}" class="hover:text-blue-600">Users</a>
+					<i class="fas fa-chevron-right text-xs"></i> <span
+						class="font-semibold text-gray-900">Chi tiết #<span
+						th:text="${user.id}"></span></span>
+				</div>
+				<a th:href="@{/admin/users}"
+					class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm text-sm font-medium">
+					<i class="fas fa-arrow-left mr-2"></i> Quay lại danh sách
+				</a>
+			</div>
+
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+				<div class="lg:col-span-1 space-y-6">
+
+					<div
+						class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+						<div
+							class="p-6 text-center border-b border-gray-100 bg-gradient-to-b from-blue-50 to-white">
+							<img
+								th:src="${user.profile != null && user.profile.avatarUrl != null ? user.profile.avatarUrl : 'https://ui-avatars.com/api/?name=' + user.email}"
+								class="w-28 h-28 rounded-full mx-auto mb-4 border-4 border-white shadow-md object-cover">
+							<h2 class="text-xl font-bold text-gray-900"
+								th:text="${user.profile != null ? user.profile.fullName : 'No Name'}"></h2>
+							<p class="text-gray-500 text-sm" th:text="${user.email}"></p>
+
+							<div class="mt-4 flex justify-center gap-2">
+								<span class="px-3 py-1 rounded-full text-xs font-bold"
+									th:classappend="${user.status.name() == 'ACTIVE'} ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+									th:text="${user.status}"></span> <span
+									class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700"
+									th:text="${!user.roles.isEmpty() ? user.roles[0].name : 'N/A'}"></span>
+							</div>
+						</div>
+						<div class="p-4 bg-gray-50 flex justify-between">
+							<button
+								class="flex-1 bg-white border border-gray-300 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 mr-2">
+								<i class="fas fa-envelope mr-1"></i> Gửi Email
+							</button>
+							<button
+								class="flex-1 bg-red-50 border border-red-200 text-red-700 py-2 rounded-lg text-sm font-medium hover:bg-red-100">
+								<i class="fas fa-ban mr-1"></i> Khóa TK
+							</button>
+						</div>
+					</div>
+
+					<div
+						class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+						<h3 class="font-bold text-gray-900 mb-4 flex items-center">
+							<i class="fas fa-id-card text-blue-600 mr-2"></i> Thông tin cá
+							nhân
+						</h3>
+						<div class="space-y-3 text-sm">
+							<div
+								class="flex justify-between border-b border-dashed border-gray-200 pb-2">
+								<span class="text-gray-500">Số điện thoại</span> <span
+									class="font-medium text-gray-900"
+									th:text="${user.profile != null ? user.profile.phone : '---'}"></span>
+							</div>
+							<div
+								class="flex justify-between border-b border-dashed border-gray-200 pb-2">
+								<span class="text-gray-500">Provider</span> <span
+									class="font-medium text-gray-900" th:text="${user.provider}"></span>
+							</div>
+							<div>
+								<span class="block text-gray-500 mb-1">Địa chỉ</span> <span
+									class="font-medium text-gray-900 block"
+									th:text="${user.profile != null ? user.profile.address : '---'}"></span>
+							</div>
+						</div>
+					</div>
+
+					<div
+						class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+						<h3 class="font-bold text-gray-900 mb-4 flex items-center">
+							<i class="fas fa-university text-green-600 mr-2"></i> Tài khoản
+							Ngân hàng
+						</h3>
+						<div class="bg-green-50 p-4 rounded-lg border border-green-100">
+							<p class="text-xs text-green-600 font-bold uppercase mb-1">Ngân
+								hàng</p>
+							<p class="text-base font-bold text-gray-800 mb-3"
+								th:text="${user.profile != null ? user.profile.bankName : '---'}"></p>
+
+							<p class="text-xs text-green-600 font-bold uppercase mb-1">Số
+								tài khoản</p>
+							<p
+								class="text-lg font-mono font-bold text-gray-900 tracking-wider"
+								th:text="${user.profile != null ? user.profile.bankAccountNumber : '---'}"></p>
+						</div>
+					</div>
+				</div>
+
+				<div class="lg:col-span-2">
+					<div
+						class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-full flex flex-col">
+						<div
+							class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+							<h3 class="font-bold text-gray-900 text-lg flex items-center">
+								<i class="fas fa-history text-orange-500 mr-2"></i> Lịch Sử
+								Booking & Payment
+							</h3>
+							<span
+								class="bg-orange-100 text-orange-800 text-xs font-bold px-3 py-1 rounded-full"
+								th:text="${bookings.size()} + ' bookings'"></span>
+						</div>
+
+						<div class="overflow-x-auto flex-1">
+							<table class="w-full text-left text-sm">
+								<thead
+									class="bg-gray-100 text-gray-600 uppercase text-xs font-bold">
+									<tr>
+										<th class="px-6 py-3 w-24">Mã BK</th>
+										<th class="px-6 py-3">Thông tin Tour</th>
+										<th class="px-6 py-3 text-right">Tổng tiền</th>
+										<th class="px-6 py-3 text-center">Trạng thái</th>
+										<th class="px-6 py-3 w-1/3">Lịch sử Thanh toán</th>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-gray-100">
+									<tr th:each="b : ${bookings}"
+										class="hover:bg-gray-50 transition">
+										<td class="px-6 py-4 align-top font-bold text-blue-600">
+											#<span th:text="${b.id}"></span>
+										</td>
+
+										<td class="px-6 py-4 align-top">
+											<div class="font-bold text-gray-900 mb-1"
+												th:text="${b.tour.name}"></div>
+											<div class="text-xs text-gray-500 flex flex-col gap-1">
+												<span><i class="far fa-calendar-alt mr-1"></i> Đặt: <span
+													th:text="${#temporals.format(b.bookingDate, 'dd/MM/yyyy')}"></span></span>
+												<span><i class="fas fa-plane-departure mr-1"></i> Đi:
+													<span th:text="${b.startDate}"></span></span>
+											</div>
+										</td>
+
+										<td
+											class="px-6 py-4 align-top text-right font-bold text-orange-600"
+											th:text="${#numbers.formatDecimal(b.totalPrice, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+										</td>
+
+										<td class="px-6 py-4 align-top text-center"><span
+											class="px-2.5 py-1 rounded-full text-[10px] font-bold border"
+											th:classappend="${b.status.name() == 'PAID'} ? 'bg-green-50 text-green-700 border-green-200' : 
+                                                                 (${b.status.name() == 'PENDING'} ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-red-50 text-red-700 border-red-200')"
+											th:text="${b.status}"></span></td>
+
+										<td class="px-6 py-4 align-top bg-gray-50/50">
+											<div th:if="${b.payments == null || b.payments.isEmpty()}"
+												class="text-gray-400 italic text-xs py-2 text-center">
+												Chưa có thanh toán</div>
+
+											<div th:each="pay : ${b.payments}"
+												class="mb-3 last:mb-0 bg-white p-2 rounded border border-green-200 shadow-sm relative overflow-hidden">
+												<div class="absolute left-0 top-0 bottom-0 w-1 bg-green-500"></div>
+
+												<div class="flex justify-between items-center mb-1">
+													<span class="text-green-700 font-bold text-xs"> <i
+														class="fas fa-check-circle mr-1"></i> SUCCESS
+													</span> <span class="text-[10px] text-gray-400">#PAY<span
+														th:text="${pay.id}"></span></span>
+												</div>
+
+												<div class="text-sm font-bold text-gray-800 mb-1">
+													+<span
+														th:text="${#numbers.formatDecimal(pay.amount, 0, 'COMMA', 0, 'POINT')}"></span>
+													đ
+												</div>
+
+												<div
+													class="text-[10px] text-gray-500 border-t border-gray-100 pt-1 mt-1 flex justify-between">
+													<span th:text="${pay.bankName}"></span> <span
+														th:text="${#temporals.format(pay.paymentDate, 'dd/MM HH:mm')}"></span>
+												</div>
+											</div>
+										</td>
+									</tr>
+
+									<tr th:if="${bookings.isEmpty()}">
+										<td colspan="5" class="text-center py-10">
+											<div
+												class="flex flex-col items-center justify-center text-gray-400">
+												<i class="fas fa-receipt text-4xl mb-2 opacity-50"></i> <span
+													class="italic">User này chưa đặt tour nào.</span>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+
+		<div th:replace="~{fragments/footer :: footer}"></div>
+	</div>
+
+</body>
+</html>
