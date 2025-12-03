@@ -10,6 +10,7 @@ import org.example.framgiabookingtours.entity.Booking;
 import org.example.framgiabookingtours.entity.Profile;
 import org.example.framgiabookingtours.entity.Review;
 import org.example.framgiabookingtours.entity.User;
+import org.example.framgiabookingtours.entity.ReviewLike;
 import org.example.framgiabookingtours.enums.BookingStatus;
 import org.example.framgiabookingtours.exception.AppException;
 import org.example.framgiabookingtours.exception.ErrorCode;
@@ -24,6 +25,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -192,5 +195,56 @@ public class ReviewServiceImpl implements ReviewService {
                     .commentCount(commentCount)
                     .build();
         });
+    }
+
+    @Override
+    @Transactional
+    public void toggleLikeReview(Long reviewId, String userEmail) {
+        // Tìm user
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        // Tìm review
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+
+        // Kiểm tra review có bị xóa không
+        if (review.getIsDeleted()) {
+            throw new AppException(ErrorCode.REVIEW_NOT_FOUND);
+        }
+
+        // Kiểm tra đã like chưa (bản ghi chưa bị xóa)
+        var existingLikeOpt = reviewLikeRepository
+                .findByUserIdAndReviewIdAndIsDeletedFalse(user.getId(), reviewId);
+
+        if (existingLikeOpt.isPresent()) {
+            // Đã like -> unlike: soft delete bản ghi like
+            ReviewLike existingLike = existingLikeOpt.get();
+            existingLike.setIsDeleted(true);
+            existingLike.setDeletedAt(LocalDateTime.now());
+            reviewLikeRepository.save(existingLike);
+        } else {
+            // Chưa like -> tạo mới
+            ReviewLike newLike = ReviewLike.builder()
+                    .user(user)
+                    .review(review)
+                    .isDeleted(false)
+                    .build();
+            reviewLikeRepository.save(newLike);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long getLikeCountByReviewId(Long reviewId) {
+        // Đảm bảo review tồn tại và chưa bị xóa
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+
+        if (review.getIsDeleted()) {
+            throw new AppException(ErrorCode.REVIEW_NOT_FOUND);
+        }
+
+        return reviewLikeRepository.countByReviewIdAndIsDeletedFalse(reviewId);
     }
 }

@@ -64,4 +64,40 @@ public class ReviewController {
                 .message("Review deleted successfully")
                 .build();
     }
+
+    /**
+     * Task 3.1 — Toggle Like / Unlike Review
+     * POST /api/reviews/{reviewId}/like
+     */
+    @PostMapping("/{reviewId}/like")
+    public ApiResponse<Void> toggleLikeReview(
+            @PathVariable Long reviewId,
+            @RequestHeader(value = "X-User-Email", required = false) String headerEmail,
+            Authentication authentication) {
+
+        String userEmail = (authentication != null) ? authentication.getName() : headerEmail;
+        reviewService.toggleLikeReview(reviewId, userEmail);
+
+        return ApiResponse.<Void>builder()
+                .code(1000)
+                .message("Toggle like review successfully")
+                .build();
+    }
+
+    /**
+     * Task 3.2 — Get Like Count
+     * GET /api/reviews/{reviewId}/likes/count
+     */
+    @GetMapping("/{reviewId}/likes/count")
+    public ApiResponse<Long> getLikeCount(
+            @PathVariable Long reviewId) {
+
+        long likeCount = reviewService.getLikeCountByReviewId(reviewId);
+
+        return ApiResponse.<Long>builder()
+                .code(1000)
+                .message("Get like count successfully")
+                .result(likeCount)
+                .build();
+    }
 }

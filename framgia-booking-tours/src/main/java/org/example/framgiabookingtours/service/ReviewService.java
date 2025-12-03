@@ -16,4 +16,14 @@ public interface ReviewService {
     void deleteReview(Long reviewId, String userEmail);
 
     Page<ReviewListItemDTO> getReviewsByTourId(Long tourId, Pageable pageable);
+
+    /**
+     * Task 3.1 — Toggle Like / Unlike Review
+     */
+    void toggleLikeReview(Long reviewId, String userEmail);
+
+    /**
+     * Task 3.2 — Get Like Count
+     */
+    long getLikeCountByReviewId(Long reviewId);
 }
