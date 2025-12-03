@@ -41,7 +41,11 @@ public enum ErrorCode {
     COMMENT_NOT_BELONG_TO_REVIEW(1025, "Comment does not belong to this review", HttpStatus.BAD_REQUEST),
     BOOKING_COMPLETE(1026, "This booking is completed", HttpStatus.BAD_REQUEST),
     INVALID_CREDENTIALS(1027, "Incorrect email or password", HttpStatus.UNAUTHORIZED),
-    UNVERIFIED_EMAIL(1028, "Your account is not verified. Please check your email and activate your account.", HttpStatus.FORBIDDEN);
+    UNVERIFIED_EMAIL(1028, "Your account is not verified. Please check your email and activate your account.", HttpStatus.FORBIDDEN),
+    INVALID_INPUT(1029, "Invalid input data", HttpStatus.BAD_REQUEST),
+    EMAIL_IS_REQUIRED(1030, "Email cannot be blank", HttpStatus.BAD_REQUEST),
+    PASSWORD_IS_REQUIRED(1031, "Password cannot be blank", HttpStatus.BAD_REQUEST),
+    NAME_IS_REQUIRED(1032, "Name cannot be blank", HttpStatus.BAD_REQUEST);
 
     ErrorCode(int code, String message, HttpStatusCode httpStatusCode) {
         this.code = code;
