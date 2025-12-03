@@ -9,6 +9,8 @@ import org.example.framgiabookingtours.dto.ApiResponse;
 import org.example.framgiabookingtours.dto.CustomUserDetails;
 import org.example.framgiabookingtours.dto.request.LoginRequestDTO;
 import org.example.framgiabookingtours.dto.request.RegisterRequestDTO;
+import org.example.framgiabookingtours.dto.request.ResendOtpRequestDTO;
+import org.example.framgiabookingtours.dto.request.VerifyEmailRequestDTO;
 import org.example.framgiabookingtours.dto.response.AuthResponseDTO;
 import org.example.framgiabookingtours.service.AuthService;
 import org.example.framgiabookingtours.service.CustomUserDetailsService;
@@ -45,6 +47,32 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<Void>builder()
                 .code(HttpStatus.CREATED.value())
                 .message("Đăng ký thành công. Vui lòng kiểm tra email để kích hoạt.")
+                .build());
+    }
+
+    @PostMapping("/verify")
+    public ResponseEntity<ApiResponse<AuthResponseDTO>> verify(
+            @Valid @RequestBody VerifyEmailRequestDTO verifyEmailRequestDTO) {
+        AuthResponseDTO authResponseDTO = authService.verify(verifyEmailRequestDTO);
+
+        ApiResponse<AuthResponseDTO> apiResponse = ApiResponse.<AuthResponseDTO>builder()
+                .code(HttpStatus.OK.value())
+                .result(authResponseDTO)
+                .message("Xác thực thành công!")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("/resend-otp")
+    @Operation(summary = "Gửi lại mã OTP xác thực email")
+    public ResponseEntity<ApiResponse<Void>> resendOtp(
+            @Valid @RequestBody ResendOtpRequestDTO resendDto) {
+        authService.resendVerificationCode(resendDto);
+
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message("Mã xác thực mới đã được gửi đến email của bạn. Vui lòng kiểm tra!")
                 .build());
     }
 }

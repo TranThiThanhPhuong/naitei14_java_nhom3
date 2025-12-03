@@ -6,6 +6,8 @@ import lombok.experimental.FieldDefaults;
 import org.example.framgiabookingtours.dto.CustomUserDetails;
 import org.example.framgiabookingtours.dto.request.LoginRequestDTO;
 import org.example.framgiabookingtours.dto.request.RegisterRequestDTO;
+import org.example.framgiabookingtours.dto.request.ResendOtpRequestDTO;
+import org.example.framgiabookingtours.dto.request.VerifyEmailRequestDTO;
 import org.example.framgiabookingtours.dto.response.AuthResponseDTO;
 import org.example.framgiabookingtours.dto.response.ProfileResponseDTO;
 import org.example.framgiabookingtours.entity.Profile;
@@ -18,6 +20,7 @@ import org.example.framgiabookingtours.repository.RoleRepository;
 import org.example.framgiabookingtours.repository.UserRepository;
 import org.example.framgiabookingtours.service.AuthService;
 import org.example.framgiabookingtours.service.CustomUserDetailsService;
+import org.example.framgiabookingtours.service.EmailService;
 import org.example.framgiabookingtours.util.JwtUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,6 +32,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.Optional;
+import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -41,17 +47,33 @@ public class AuthServiceImpl implements AuthService {
     CustomUserDetailsService userDetailsService;
     PasswordEncoder passwordEncoder;
     JwtUtils jwtUtils;
+    EmailService emailService;
     RedisTemplate<String, String> redisTemplate;
 
     String REFRESH_TOKEN_PREFIX = "refreshtoken:";
+    String VERIFICATION_EMAIL_PREFIX = "verification-email:";
 
     @Override
     public AuthResponseDTO login(LoginRequestDTO loginRequestDTO) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequestDTO.getEmail(),
-                        loginRequestDTO.getPassword())
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequestDTO.getEmail(),
+                            loginRequestDTO.getPassword())
+            );
+        } catch (DisabledException e) {
+            User user = userRepository.findByEmail(loginRequestDTO.getEmail())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+            if (user.getStatus() == UserStatus.UNVERIFIED) {
+                sendVerificationCodeIfNeeded(loginRequestDTO.getEmail());
+                throw new AppException(ErrorCode.UNVERIFIED_EMAIL);
+            }
+
+            throw e;
+        } catch (BadCredentialsException e) {
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+        }
 
         var user = userRepository.findByEmail(loginRequestDTO.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -89,7 +111,62 @@ public class AuthServiceImpl implements AuthService {
 
         user.setProfile(userProfile);
         userProfile.setUser(user);
-        User savedUser = userRepository.save(user);
+        userRepository.save(user);
+        String code = generateVerificationCode();
+
+        String verifyRedisKey = VERIFICATION_EMAIL_PREFIX + registerRequestDTO.getEmail();
+        redisTemplate.opsForValue().set(verifyRedisKey, code, 5, TimeUnit.MINUTES);
+        emailService.sendVerificationEmail(registerRequestDTO.getEmail(), code);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponseDTO verify(VerifyEmailRequestDTO verifyEmailRequestDTO) {
+        String verifyRedisKey = VERIFICATION_EMAIL_PREFIX + verifyEmailRequestDTO.getEmail();
+        String savedCode = redisTemplate.opsForValue().get(verifyRedisKey);
+        
+        if (savedCode == null || savedCode.isEmpty()) {
+            throw new AppException(ErrorCode.VERIFICATION_CODE_EXPIRED);
+        }
+        
+        if (!savedCode.equals(verifyEmailRequestDTO.getCode())) {
+            throw new AppException(ErrorCode.VERIFICATION_CODE_INVALID);
+        }
+        
+        User user = userRepository.findByEmail(verifyEmailRequestDTO.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        
+        user.setStatus(UserStatus.ACTIVE);
+        userRepository.save(user);
+        
+        redisTemplate.delete(verifyRedisKey);
+        var userDetail = userDetailsService.loadUserByUsername(user.getEmail());
+        return generateAuthResponse(user, userDetail);
+    }
+
+    @Override
+    public void resendVerificationCode(ResendOtpRequestDTO resendDTO) {
+        User user = userRepository.findByEmail(resendDTO.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            throw new AppException(ErrorCode.USER_ALREADY_VERIFIED);
+        }
+
+        String verifyRedisKey = VERIFICATION_EMAIL_PREFIX + resendDTO.getEmail();
+        String existingCode = redisTemplate.opsForValue().get(verifyRedisKey);
+
+        if (existingCode != null && !existingCode.isEmpty()) {
+            Long ttl = redisTemplate.getExpire(verifyRedisKey, TimeUnit.SECONDS);
+            if (ttl != null && ttl > 240) {  
+                throw new AppException(ErrorCode.RESEND_OTP_TOO_SOON);
+            }
+        }
+
+        String newCode = generateVerificationCode();
+        redisTemplate.opsForValue().set(verifyRedisKey, newCode, 5, TimeUnit.MINUTES);
+
+        emailService.sendVerificationEmail(resendDTO.getEmail(), newCode);
     }
 
     private AuthResponseDTO generateAuthResponse(User user, CustomUserDetails userDetail) {
@@ -127,5 +204,20 @@ public class AuthServiceImpl implements AuthService {
                 .bankName(profile.getBankName())
                 .bankAccountNumber(profile.getBankAccountNumber())
                 .build();
+    }
+
+    private String generateVerificationCode() {
+        return String.format("%06d", new Random().nextInt(999999));
+    }
+
+    private void sendVerificationCodeIfNeeded(String email) {
+        String verifyRedisKey = VERIFICATION_EMAIL_PREFIX + email;
+        String existingCode = redisTemplate.opsForValue().get(verifyRedisKey);
+
+        if (existingCode == null || existingCode.isEmpty()) {
+            String newCode = generateVerificationCode();
+            redisTemplate.opsForValue().set(verifyRedisKey, newCode, 5, TimeUnit.MINUTES);
+            emailService.sendVerificationEmail(email, newCode);
+        }
     }
 }

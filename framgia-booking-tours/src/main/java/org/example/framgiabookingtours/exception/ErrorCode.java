@@ -45,7 +45,12 @@ public enum ErrorCode {
     INVALID_INPUT(1029, "Invalid input data", HttpStatus.BAD_REQUEST),
     EMAIL_IS_REQUIRED(1030, "Email cannot be blank", HttpStatus.BAD_REQUEST),
     PASSWORD_IS_REQUIRED(1031, "Password cannot be blank", HttpStatus.BAD_REQUEST),
-    NAME_IS_REQUIRED(1032, "Name cannot be blank", HttpStatus.BAD_REQUEST);
+    NAME_IS_REQUIRED(1032, "Name cannot be blank", HttpStatus.BAD_REQUEST),
+    VERIFICATION_CODE_IS_REQUIRED(1033, "Verification code cannot be blank", HttpStatus.BAD_REQUEST),
+    VERIFICATION_CODE_INVALID(1034, "Verification code is invalid", HttpStatus.BAD_REQUEST),
+    VERIFICATION_CODE_EXPIRED(1035, "Verification code has expired", HttpStatus.BAD_REQUEST),
+    RESEND_OTP_TOO_SOON(1036, "Please wait before requesting a new verification code", HttpStatus.TOO_MANY_REQUESTS),
+    USER_ALREADY_VERIFIED(1037, "User already verified", HttpStatus.BAD_REQUEST);
 
     ErrorCode(int code, String message, HttpStatusCode httpStatusCode) {
         this.code = code;
