@@ -1,7 +1,6 @@
 package org.example.framgiabookingtours.dto;
 
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 import org.example.framgiabookingtours.entity.User;
 import org.example.framgiabookingtours.enums.UserStatus;
 import org.springframework.security.core.GrantedAuthority;
@@ -9,7 +8,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Data
@@ -26,7 +24,8 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getPassword() {
-        return user.getPassword();
+        // OAuth2 users don't have password, return empty string to avoid null issues
+        return user.getPassword() != null ? user.getPassword() : "";
     }
 
     @Override

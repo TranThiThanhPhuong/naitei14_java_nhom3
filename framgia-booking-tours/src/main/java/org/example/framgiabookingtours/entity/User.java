@@ -27,7 +27,7 @@ public class User {
     @Column(nullable = false, unique = true)
     String email;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     String password;
 
     @Enumerated(EnumType.STRING)
@@ -43,6 +43,9 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     LocalDateTime updatedAt;
+
+    @Column(name = "google_id", unique = true)
+    private String googleId;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL,  orphanRemoval = true)
     @ToString.Exclude

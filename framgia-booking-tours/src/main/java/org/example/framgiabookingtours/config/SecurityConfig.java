@@ -28,17 +28,18 @@ import java.util.List;
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     private static final String[] PUBLIC_URLS = {
             "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger-resources/**", "/webjars/**",
-            "/", "/login", "/register", "/css/**", "/js/**", "/images/**", "/fonts/**", "/error"
+            "/", "/login/**", "/register", "/css/**", "/js/**", "/images/**", "/fonts/**", "/error"
     };
 
     @Bean
     @Order(1)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .securityMatcher("/api/**")
+                .securityMatcher("/api/**", "/oauth2/**", "/login/oauth2/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
@@ -51,9 +52,12 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/my-bookings").authenticated()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers("/my-bookings").permitAll() //.authenticated() tạm thời permit
+                        .anyRequest().permitAll() // Tạm permit
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2LoginSuccessHandler)
                 )
 
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -68,7 +72,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(PUBLIC_URLS).permitAll()
                         .requestMatchers("/my-bookings").authenticated()
                         .anyRequest().authenticated()
                 )

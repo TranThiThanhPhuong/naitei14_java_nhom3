@@ -10,6 +10,7 @@ import org.example.framgiabookingtours.dto.response.ProfileResponseDTO;
 import org.example.framgiabookingtours.entity.Profile;
 import org.example.framgiabookingtours.entity.Role;
 import org.example.framgiabookingtours.entity.User;
+import org.example.framgiabookingtours.enums.Provider;
 import org.example.framgiabookingtours.enums.UserStatus;
 import org.example.framgiabookingtours.exception.AppException;
 import org.example.framgiabookingtours.exception.ErrorCode;
@@ -96,6 +97,7 @@ public class AuthServiceImpl implements AuthService {
         User user = User.builder()
                 .email(registerRequestDTO.getEmail())
                 .password(passwordEncoder.encode(registerRequestDTO.getPassword()))
+                .provider(Provider.LOCAL)
                 .roles(Collections.singletonList(role))
                 .status(UserStatus.UNVERIFIED)
                 .build();
