@@ -21,32 +21,41 @@
 					<div class="flex justify-between items-center mb-4">
 						<h3 class="text-2xl font-bold text-gray-900">Danh Sách Người
 							Dùng</h3>
-						<button
-							class="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition flex items-center shadow-sm">
-							<i class="fas fa-user-plus mr-2"></i> Thêm Mới
-						</button>
 					</div>
 
 					<form th:action="@{/admin/users}" method="get"
 						class="flex flex-wrap gap-3">
+
 						<select name="status"
-							class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-							<option value="">-- Trạng thái --</option>
-							<option value="ACTIVE" th:selected="${param.status == 'ACTIVE'}">Active</option>
-							<option value="INACTIVE"
-								th:selected="${param.status == 'INACTIVE'}">Inactive</option>
+							class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+							<option value=""
+								th:selected="${currentStatus == null || currentStatus == ''}">--
+								Trạng thái --</option>
+
+							<option value="ACTIVE" th:selected="${currentStatus == 'ACTIVE'}">Active</option>
+
+							<option value="BLOCKED"
+								th:selected="${currentStatus == 'BLOCKED'}">Blocked</option>
+
+							<option value="UNVERIFIED"
+								th:selected="${currentStatus == 'UNVERIFIED'}">Unverified</option>
 						</select> <select name="role"
-							class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-							<option value="">-- Role --</option>
-							<option value="ADMIN" th:selected="${param.role == 'ADMIN'}">Admin</option>
-							<option value="USER" th:selected="${param.role == 'USER'}">User</option>
+							class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+							<option value=""
+								th:selected="${currentRole == null || currentRole == ''}">--
+								Role --</option>
+							<option value="ADMIN" th:selected="${currentRole == 'ADMIN'}">Admin</option>
+							<option value="USER" th:selected="${currentRole == 'USER'}">User</option>
+							<option value="GUIDE" th:selected="${currentRole == 'GUIDE'}">Guide</option>
 						</select>
+
 						<div class="relative flex-1 min-w-[250px]">
-							<input type="text" name="keyword" th:value="${param.keyword}"
-								placeholder="Tìm kiếm tên, email..."
+							<input type="text" name="keyword" th:value="${currentKeyword}"
+								placeholder="Tìm kiếm theo email, tên..."
 								class="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
 							<i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
 						</div>
+
 						<button type="submit"
 							class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-blue-700 transition shadow-sm font-medium">
 							Lọc</button>
@@ -102,30 +111,30 @@
 					class="px-6 py-4 bg-gray-50 border-t flex justify-between items-center text-sm text-gray-600">
 					<div>
 						Hiển thị <span class="font-bold"
-							th:text="${(currentPage - 1) * pageSize + 1}">1</span> - <span
-							class="font-bold"
-							th:text="${(currentPage * pageSize) > totalItems ? totalItems : (currentPage * pageSize)}">10</span>
-						trong tổng số <span class="font-bold" th:text="${totalItems}">50</span>
-						người dùng
+							th:text="${totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0}"></span>
+						- <span class="font-bold"
+							th:text="${(currentPage * pageSize) > totalItems ? totalItems : (currentPage * pageSize)}"></span>
+						trong tổng số <span class="font-bold" th:text="${totalItems}"></span>
+						kết quả
 					</div>
 
 					<div class="flex gap-1" th:if="${totalPages > 1}">
 						<a
-							th:href="@{/admin/users(page=${currentPage - 1}, size=${pageSize})}"
+							th:href="@{/admin/users(page=${currentPage - 1}, size=${pageSize}, status=${currentStatus}, role=${currentRole}, keyword=${currentKeyword})}"
 							th:classappend="${currentPage == 1} ? 'pointer-events-none opacity-50' : ''"
 							class="px-3 py-1 border rounded bg-white hover:bg-gray-100 transition">
 							Trước </a>
 
 						<th:block th:each="i : ${#numbers.sequence(1, totalPages)}">
 							<a th:if="${i >= currentPage - 2 && i <= currentPage + 2}"
-								th:href="@{/admin/users(page=${i}, size=${pageSize})}"
+								th:href="@{/admin/users(page=${i}, size=${pageSize}, status=${currentStatus}, role=${currentRole}, keyword=${currentKeyword})}"
 								th:text="${i}"
 								th:classappend="${currentPage == i} ? 'bg-blue-600 text-white border-blue-600' : 'bg-white hover:bg-gray-100'"
 								class="px-3 py-1 border rounded transition"> </a>
 						</th:block>
 
 						<a
-							th:href="@{/admin/users(page=${currentPage + 1}, size=${pageSize})}"
+							th:href="@{/admin/users(page=${currentPage + 1}, size=${pageSize}, status=${currentStatus}, role=${currentRole}, keyword=${currentKeyword})}"
 							th:classappend="${currentPage == totalPages} ? 'pointer-events-none opacity-50' : ''"
 							class="px-3 py-1 border rounded bg-white hover:bg-gray-100 transition">
 							Sau </a>

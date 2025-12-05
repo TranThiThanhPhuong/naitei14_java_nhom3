@@ -108,13 +108,18 @@ public class AdminUserController {
 
 		Pageable pageable = PageRequest.of(page - 1, size, Sort.by("id").descending());
 
-		Page<User> userPage = userService.getAllUsers(pageable);
+		Page<User> userPage = userService.getAllUsers(status, role, keyword, pageable);
 
 		model.addAttribute("users", userPage.getContent());
 		model.addAttribute("currentPage", page);
 		model.addAttribute("totalPages", userPage.getTotalPages());
 		model.addAttribute("totalItems", userPage.getTotalElements());
 		model.addAttribute("pageSize", size);
+
+		// Trả lại các giá trị lọc về View để giữ trạng thái trên Form
+		model.addAttribute("currentStatus", status);
+		model.addAttribute("currentRole", role);
+		model.addAttribute("currentKeyword", keyword);
 
 		return "admin/users";
 	}
