@@ -11,8 +11,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -174,5 +176,36 @@ public class AdminUserController {
 		model.addAttribute("bookings", bookings);
 
 		return "admin/user-detail";
+	}
+
+	@PostMapping("/update-status")
+	public String toggleUserStatus(@RequestParam Long id, @RequestParam String currentStatus,
+			@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "5") int size,
+			@RequestParam(required = false) String filterStatus, @RequestParam(required = false) String filterRole,
+			@RequestParam(required = false) String filterKeyword, RedirectAttributes redirectAttributes) {
+		// 1. Logic đổi trạng thái (Nếu đang ACTIVE -> BLOCKED, Ngược lại -> ACTIVE)
+		// Lưu ý: Nếu user đang UNVERIFIED mà admin gạt nút -> Sẽ thành ACTIVE (Kích
+		// hoạt)
+		String newStatus = "ACTIVE".equals(currentStatus) ? "BLOCKED" : "ACTIVE";
+
+		// 2. Gọi Service
+		userService.updateUserStatus(id, newStatus);
+
+		// 3. Gắn lại các tham số filter vào URL redirect
+		redirectAttributes.addAttribute("page", page);
+		redirectAttributes.addAttribute("size", size);
+
+		if (filterStatus != null && !filterStatus.isEmpty()) {
+			redirectAttributes.addAttribute("status", filterStatus);
+		}
+		if (filterRole != null && !filterRole.isEmpty()) {
+			redirectAttributes.addAttribute("role", filterRole);
+		}
+		if (filterKeyword != null && !filterKeyword.isEmpty()) {
+			redirectAttributes.addAttribute("keyword", filterKeyword);
+		}
+
+		// 4. Reload lại trang danh sách
+		return "redirect:/admin/users";
 	}
 }

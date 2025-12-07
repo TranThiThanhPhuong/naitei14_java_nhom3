@@ -2,6 +2,9 @@ package org.example.framgiabookingtours.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.example.framgiabookingtours.entity.User;
+import org.example.framgiabookingtours.enums.UserStatus;
+import org.example.framgiabookingtours.exception.AppException;
+import org.example.framgiabookingtours.exception.ErrorCode;
 import org.example.framgiabookingtours.repository.UserRepository;
 import org.example.framgiabookingtours.repository.specification.UserSpecification;
 import org.example.framgiabookingtours.service.UserService;
@@ -20,22 +23,39 @@ public class UserServiceImpl implements UserService {
 	public Page<User> getAllUsers(String status, String role, String keyword, Pageable pageable) {
 		Specification<User> spec = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
 
-        // Ghép điều kiện Status
-        if (status != null && !status.isEmpty()) {
-            spec = spec.and(UserSpecification.hasStatus(status));
-        }
+		// Ghép điều kiện Status
+		if (status != null && !status.isEmpty()) {
+			spec = spec.and(UserSpecification.hasStatus(status));
+		}
 
-        // Ghép điều kiện Role
-        if (role != null && !role.isEmpty()) {
-            spec = spec.and(UserSpecification.hasRole(role));
-        }
+		// Ghép điều kiện Role
+		if (role != null && !role.isEmpty()) {
+			spec = spec.and(UserSpecification.hasRole(role));
+		}
 
-        // Ghép điều kiện Keyword (Tìm kiếm)
-        if (keyword != null && !keyword.isEmpty()) {
-            spec = spec.and(UserSpecification.hasKeyword(keyword));
-        }
+		// Ghép điều kiện Keyword (Tìm kiếm)
+		if (keyword != null && !keyword.isEmpty()) {
+			spec = spec.and(UserSpecification.hasKeyword(keyword));
+		}
 
-        // Gọi Repository
-        return userRepository.findAll(spec, pageable);
+		// Gọi Repository
+		return userRepository.findAll(spec, pageable);
 	}
+
+	@Override
+    public void updateUserStatus(Long id, String status) {
+        // 1. Tìm User, nếu không thấy thì ném lỗi
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        try {
+            // 2. Chuyển String sang Enum và lưu
+            UserStatus newStatus = UserStatus.valueOf(status);
+            user.setStatus(newStatus);
+            userRepository.save(user);
+        } catch (IllegalArgumentException e) {
+            // Trường hợp status gửi lên không đúng định dạng
+            throw new RuntimeException("Invalid status: " + status);
+        }
+    }
 }

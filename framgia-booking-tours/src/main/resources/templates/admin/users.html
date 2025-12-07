@@ -93,10 +93,30 @@
 									class="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700"
 									th:text="${!user.roles.isEmpty() ? user.roles[0].name : '---'}"></span>
 								</td>
-								<td class="px-6 py-4 text-center"><span
-									class="px-2.5 py-1 rounded-full text-xs font-bold"
-									th:classappend="${user.status.name() == 'ACTIVE'} ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-									th:text="${user.status}"></span></td>
+								<td class="px-6 py-4 text-center">
+									<form th:action="@{/admin/users/update-status}" method="post">
+
+										<input type="hidden" name="id" th:value="${user.id}">
+										<input type="hidden" name="currentStatus"
+											th:value="${user.status}"> <input type="hidden"
+											name="page" th:value="${currentPage}"> <input
+											type="hidden" name="size" th:value="${pageSize}"> <input
+											type="hidden" name="filterStatus" th:value="${currentStatus}">
+										<input type="hidden" name="filterRole"
+											th:value="${currentRole}"> <input type="hidden"
+											name="filterKeyword" th:value="${currentKeyword}"> <label
+											class="toggle-switch"> <input type="checkbox"
+											class="status-checkbox"
+											th:checked="${user.status.name() == 'ACTIVE'}"> <span
+											class="slider"></span>
+										</label>
+									</form>
+
+									<div class="text-[10px] font-bold mt-1"
+										th:classappend="${user.status.name() == 'ACTIVE'} ? 'text-green-600' : 
+                          (${user.status.name() == 'UNVERIFIED'} ? 'text-yellow-600' : 'text-red-600')"
+										th:text="${user.status}"></div>
+								</td>
 								<td class="px-6 py-4 text-center"><a
 									th:href="@{/admin/users/{id}(id=${user.id})}"
 									class="inline-block bg-white border border-gray-200 text-blue-600 hover:bg-blue-50 hover:text-blue-800 px-3 py-1.5 rounded-lg transition shadow-sm">
@@ -145,5 +165,7 @@
 
 		<div th:replace="~{fragments/footer :: footer}"></div>
 	</div>
+
+	<script th:src="@{/js/users.js}"></script>
 </body>
 </html>
