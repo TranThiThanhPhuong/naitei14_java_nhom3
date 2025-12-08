@@ -70,6 +70,18 @@
                         </p>
                     </div>
 
+                    <!-- Ảnh review -->
+                    <div th:if="${reviewImages != null && reviewImages.size() > 0}" class="p-6 bg-gray-50 border-t">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-3">Ảnh đánh giá</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div th:each="img : ${reviewImages}">
+                                <a th:href="${img}" target="_blank" class="block overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition">
+                                    <img th:src="${img}" class="w-full h-32 object-cover hover:scale-105 transition">
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="p-4 bg-gray-50 border-t flex justify-between">
                         <form th:action="@{/admin/reviews/{id}/delete(id=${review.id})}"
                               method="post"
@@ -120,6 +132,15 @@
                                         </div>
                                         <p class="text-sm text-gray-800 whitespace-pre-line mb-3"
                                            th:text="${comment.content}"></p>
+
+                                        <!-- Ảnh comment -->
+                                        <div th:if="${commentImages[comment.id] != null && commentImages[comment.id].size() > 0}" class="mb-3 grid grid-cols-3 gap-2">
+                                            <div th:each="img : ${commentImages[comment.id]}">
+                                                <a th:href="${img}" target="_blank" class="block overflow-hidden rounded border border-gray-200 hover:border-blue-400 transition">
+                                                    <img th:src="${img}" class="w-full h-16 object-cover hover:scale-105 transition">
+                                                </a>
+                                            </div>
+                                        </div>
 
                                         <form th:action="@{/admin/reviews/comments/{id}/delete(id=${comment.id})}"
                                               method="post"

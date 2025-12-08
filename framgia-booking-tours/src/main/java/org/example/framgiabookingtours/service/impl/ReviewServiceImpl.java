@@ -1,5 +1,7 @@
 package org.example.framgiabookingtours.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.framgiabookingtours.dto.request.ReviewRequestDTO;
@@ -20,13 +22,18 @@ import org.example.framgiabookingtours.repository.ReviewLikeRepository;
 import org.example.framgiabookingtours.repository.ReviewRepository;
 import org.example.framgiabookingtours.repository.TourRepository;
 import org.example.framgiabookingtours.repository.UserRepository;
+import org.example.framgiabookingtours.service.ImageUploadService;
 import org.example.framgiabookingtours.service.ReviewService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -39,10 +46,12 @@ public class ReviewServiceImpl implements ReviewService {
     private final TourRepository tourRepository;
     private final ReviewLikeRepository reviewLikeRepository;
     private final CommentRepository commentRepository;
+    private final ImageUploadService imageUploadService;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
-    public ReviewResponseDTO createReview(ReviewRequestDTO request, String userEmail) {
+    public ReviewResponseDTO createReview(ReviewRequestDTO request, List<MultipartFile> images, String userEmail) {
         // Tìm user
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -66,32 +75,52 @@ public class ReviewServiceImpl implements ReviewService {
             throw new AppException(ErrorCode.REVIEW_ALREADY_EXISTS);
         }
 
+        // Upload images nếu có
+        String imageUrlsJson = null;
+        if (images != null && !images.isEmpty()) {
+            List<String> imageUrls = new ArrayList<>();
+            for (MultipartFile image : images) {
+                if (image != null && !image.isEmpty()) {
+                    try {
+                        String fileName = "review-" + UUID.randomUUID().toString() + ".jpg";
+                        String folder = "review_images";
+                        String imageUrl = imageUploadService.uploadFile(image, fileName, folder);
+                        imageUrls.add(imageUrl);
+                    } catch (Exception e) {
+                        log.error("Failed to upload image for review", e);
+                        throw new AppException(ErrorCode.UPLOAD_FAILED);
+                    }
+                }
+            }
+            if (!imageUrls.isEmpty()) {
+                try {
+                    imageUrlsJson = objectMapper.writeValueAsString(imageUrls);
+                } catch (Exception e) {
+                    log.error("Failed to convert image URLs to JSON", e);
+                    throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+                }
+            }
+        }
+
         // Tạo review
         Review review = Review.builder()
                 .booking(booking)
                 .title(request.getTitle())
                 .content(request.getContent())
                 .rating(request.getRating())
+                .imageUrls(imageUrlsJson)
                 .isDeleted(false)
                 .build();
 
         Review savedReview = reviewRepository.save(review);
 
         // Map sang DTO
-        return ReviewResponseDTO.builder()
-                .id(savedReview.getId())
-                .bookingId(savedReview.getBooking().getId())
-                .title(savedReview.getTitle())
-                .content(savedReview.getContent())
-                .rating(savedReview.getRating())
-                .createdAt(savedReview.getCreatedAt())
-                .updatedAt(savedReview.getUpdatedAt())
-                .build();
+        return mapToResponseDTO(savedReview);
     }
 
     @Override
     @Transactional
-    public ReviewResponseDTO updateReview(Long reviewId, UpdateReviewRequestDTO request, String userEmail) {
+    public ReviewResponseDTO updateReview(Long reviewId, UpdateReviewRequestDTO request, List<MultipartFile> images, String userEmail) {
         // Tìm user
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -114,18 +143,37 @@ public class ReviewServiceImpl implements ReviewService {
         review.setRating(request.getRating());
         review.setContent(request.getContent());
 
+        // Upload images nếu có
+        if (images != null && !images.isEmpty()) {
+            List<String> imageUrls = new ArrayList<>();
+            for (MultipartFile image : images) {
+                if (image != null && !image.isEmpty()) {
+                    try {
+                        String fileName = "review-" + UUID.randomUUID().toString() + ".jpg";
+                        String folder = "review_images";
+                        String imageUrl = imageUploadService.uploadFile(image, fileName, folder);
+                        imageUrls.add(imageUrl);
+                    } catch (Exception e) {
+                        log.error("Failed to upload image for review", e);
+                        throw new AppException(ErrorCode.UPLOAD_FAILED);
+                    }
+                }
+            }
+            if (!imageUrls.isEmpty()) {
+                try {
+                    String imageUrlsJson = objectMapper.writeValueAsString(imageUrls);
+                    review.setImageUrls(imageUrlsJson);
+                } catch (Exception e) {
+                    log.error("Failed to convert image URLs to JSON", e);
+                    throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+                }
+            }
+        }
+
         Review updatedReview = reviewRepository.save(review);
 
         // Map sang DTO
-        return ReviewResponseDTO.builder()
-                .id(updatedReview.getId())
-                .bookingId(updatedReview.getBooking().getId())
-                .title(updatedReview.getTitle())
-                .content(updatedReview.getContent())
-                .rating(updatedReview.getRating())
-                .createdAt(updatedReview.getCreatedAt())
-                .updatedAt(updatedReview.getUpdatedAt())
-                .build();
+        return mapToResponseDTO(updatedReview);
     }
 
     @Override
@@ -182,12 +230,24 @@ public class ReviewServiceImpl implements ReviewService {
                     .avatarUrl(profile != null ? profile.getAvatarUrl() : null)
                     .build();
 
+            // Parse image URLs từ JSON string
+            List<String> imageUrls = null;
+            if (review.getImageUrls() != null && !review.getImageUrls().isEmpty()) {
+                try {
+                    imageUrls = objectMapper.readValue(review.getImageUrls(), new TypeReference<List<String>>() {});
+                } catch (Exception e) {
+                    log.error("Failed to parse image URLs from JSON", e);
+                    imageUrls = new ArrayList<>();
+                }
+            }
+
             // Tạo review DTO
             return ReviewListItemDTO.builder()
                     .id(review.getId())
                     .title(review.getTitle())
                     .content(review.getContent())
                     .rating(review.getRating())
+                    .imageUrls(imageUrls)
                     .createdAt(review.getCreatedAt())
                     .updatedAt(review.getUpdatedAt())
                     .user(userInfo)
@@ -195,6 +255,30 @@ public class ReviewServiceImpl implements ReviewService {
                     .commentCount(commentCount)
                     .build();
         });
+    }
+
+    private ReviewResponseDTO mapToResponseDTO(Review review) {
+        // Parse image URLs từ JSON string
+        List<String> imageUrls = null;
+        if (review.getImageUrls() != null && !review.getImageUrls().isEmpty()) {
+            try {
+                imageUrls = objectMapper.readValue(review.getImageUrls(), new TypeReference<List<String>>() {});
+            } catch (Exception e) {
+                log.error("Failed to parse image URLs from JSON", e);
+                imageUrls = new ArrayList<>();
+            }
+        }
+
+        return ReviewResponseDTO.builder()
+                .id(review.getId())
+                .bookingId(review.getBooking().getId())
+                .title(review.getTitle())
+                .content(review.getContent())
+                .rating(review.getRating())
+                .imageUrls(imageUrls)
+                .createdAt(review.getCreatedAt())
+                .updatedAt(review.getUpdatedAt())
+                .build();
     }
 
     @Override

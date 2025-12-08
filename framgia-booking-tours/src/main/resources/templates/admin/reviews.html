@@ -35,6 +35,7 @@
                         <th class="px-6 py-4">Tour</th>
                         <th class="px-6 py-4">User</th>
                         <th class="px-6 py-4">Rating</th>
+                        <th class="px-6 py-4">Images</th>
                         <th class="px-6 py-4">Comments</th>
                         <th class="px-6 py-4">Ngày tạo</th>
                         <th class="px-6 py-4 text-center">Action</th>
@@ -70,6 +71,20 @@
                                 <i class="fas fa-star mr-1 text-yellow-500"></i>
                                 <span th:text="${review.rating}">5</span>
                             </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div th:if="${reviewImages[review.id] != null && reviewImages[review.id].size() > 0}" class="flex gap-1">
+                                <div th:each="img : ${reviewImages[review.id]}" class="relative group">
+                                    <img th:src="${img}" 
+                                         class="w-8 h-8 rounded object-cover cursor-pointer border border-gray-200 hover:border-blue-400"
+                                         th:title="'Review image'">
+                                    <div class="absolute bottom-full left-0 mb-2 hidden group-hover:flex bg-gray-900 text-white text-xs rounded p-2 whitespace-nowrap z-50">
+                                        <img th:src="${img}" class="w-32 h-32 rounded object-cover">
+                                    </div>
+                                </div>
+                            </div>
+                            <span th:if="${reviewImages[review.id] == null || reviewImages[review.id].size() == 0}" 
+                                  class="text-xs text-gray-400">-</span>
                         </td>
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">

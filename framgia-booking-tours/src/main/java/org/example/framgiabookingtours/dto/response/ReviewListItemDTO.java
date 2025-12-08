@@ -17,6 +17,7 @@ public class ReviewListItemDTO {
     private String title;
     private String content;
     private Integer rating;
+    private java.util.List<String> imageUrls;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

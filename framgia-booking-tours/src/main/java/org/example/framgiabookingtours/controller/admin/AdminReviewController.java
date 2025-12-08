@@ -16,7 +16,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +31,7 @@ public class AdminReviewController {
 
     private final ReviewRepository reviewRepository;
     private final CommentRepository commentRepository;
+    private final ObjectMapper objectMapper;
 
     @GetMapping
     public String listReviews(Model model,
@@ -53,6 +57,22 @@ public class AdminReviewController {
         model.addAttribute("pageSize", size);
         model.addAttribute("commentCounts", commentCounts);
 
+        // Parse imageUrls for each review
+        Map<Long, List<String>> reviewImages = new HashMap<>();
+        for (Review review : reviewPage.getContent()) {
+            List<String> images = new ArrayList<>();
+            if (review.getImageUrls() != null && !review.getImageUrls().isEmpty()) {
+                try {
+                    images = objectMapper.readValue(review.getImageUrls(), new TypeReference<List<String>>() {});
+                } catch (Exception e) {
+                    images = new ArrayList<>();
+                }
+            }
+            reviewImages.put(review.getId(), images);
+        }
+
+        model.addAttribute("reviewImages", reviewImages);
+
         return "admin/reviews";
     }
 
@@ -68,8 +88,34 @@ public class AdminReviewController {
         List<Comment> comments = commentRepository
                 .findAllByReviewIdAndIsDeletedFalseOrderByCreatedAtAsc(id);
 
+        // Parse imageUrls for review
+        List<String> reviewImages = new ArrayList<>();
+        if (review.getImageUrls() != null && !review.getImageUrls().isEmpty()) {
+            try {
+                reviewImages = objectMapper.readValue(review.getImageUrls(), new TypeReference<List<String>>() {});
+            } catch (Exception e) {
+                reviewImages = new ArrayList<>();
+            }
+        }
+
+        // Parse imageUrls for each comment
+        Map<Long, List<String>> commentImages = new HashMap<>();
+        for (Comment comment : comments) {
+            List<String> images = new ArrayList<>();
+            if (comment.getImageUrls() != null && !comment.getImageUrls().isEmpty()) {
+                try {
+                    images = objectMapper.readValue(comment.getImageUrls(), new TypeReference<List<String>>() {});
+                } catch (Exception e) {
+                    images = new ArrayList<>();
+                }
+            }
+            commentImages.put(comment.getId(), images);
+        }
+
         model.addAttribute("review", review);
+        model.addAttribute("reviewImages", reviewImages);
         model.addAttribute("comments", comments);
+        model.addAttribute("commentImages", commentImages);
         model.addAttribute("pageTitle", "Chi tiết review #" + review.getId());
 
         return "admin/review-detail";

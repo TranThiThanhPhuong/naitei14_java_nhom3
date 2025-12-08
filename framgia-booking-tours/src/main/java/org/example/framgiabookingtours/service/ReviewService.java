@@ -7,11 +7,15 @@ import org.example.framgiabookingtours.dto.response.ReviewResponseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
 public interface ReviewService {
 
-    ReviewResponseDTO createReview(ReviewRequestDTO request, String userEmail);
+    ReviewResponseDTO createReview(ReviewRequestDTO request, List<MultipartFile> images, String userEmail);
 
-    ReviewResponseDTO updateReview(Long reviewId, UpdateReviewRequestDTO request, String userEmail);
+    ReviewResponseDTO updateReview(Long reviewId, UpdateReviewRequestDTO request, List<MultipartFile> images, String userEmail);
 
     void deleteReview(Long reviewId, String userEmail);
 

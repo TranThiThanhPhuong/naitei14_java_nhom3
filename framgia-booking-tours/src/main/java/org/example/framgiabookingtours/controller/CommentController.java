@@ -1,5 +1,6 @@
 package org.example.framgiabookingtours.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.framgiabookingtours.dto.ApiResponse;
@@ -10,9 +11,12 @@ import org.example.framgiabookingtours.service.CommentService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -21,38 +25,51 @@ import java.util.List;
 public class CommentController {
 
     private final CommentService commentService;
+    private final ObjectMapper objectMapper;
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<CommentResponseDTO> createComment(
-            @Valid @RequestBody CommentRequestDTO request,
+            @RequestPart("data") @Valid String dataJson,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @RequestHeader(value = "X-User-Email", required = false) String headerEmail,
             Authentication authentication) {
 
-        String userEmail = (authentication != null) ? authentication.getName() : headerEmail;
-        CommentResponseDTO response = commentService.createComment(request, userEmail);
+        try {
+            CommentRequestDTO request = objectMapper.readValue(dataJson, CommentRequestDTO.class);
+            String userEmail = (authentication != null) ? authentication.getName() : headerEmail;
+            CommentResponseDTO response = commentService.createComment(request, images != null ? images : new ArrayList<>(), userEmail);
 
-        return ApiResponse.<CommentResponseDTO>builder()
-                .code(1000)
-                .message("Comment created successfully")
-                .result(response)
-                .build();
+            return ApiResponse.<CommentResponseDTO>builder()
+                    .code(1000)
+                    .message("Comment created successfully")
+                    .result(response)
+                    .build();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse request data", e);
+        }
     }
 
-    @PutMapping("/{commentId}")
+    @PutMapping(value = "/{commentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<CommentResponseDTO> updateComment(
             @PathVariable Long commentId,
-            @Valid @RequestBody UpdateCommentRequestDTO request,
+            @RequestPart("data") @Valid String dataJson,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @RequestHeader(value = "X-User-Email", required = false) String headerEmail,
             Authentication authentication) {
 
-        String userEmail = (authentication != null) ? authentication.getName() : headerEmail;
-        CommentResponseDTO response = commentService.updateComment(commentId, request, userEmail);
+        try {
+            UpdateCommentRequestDTO request = objectMapper.readValue(dataJson, UpdateCommentRequestDTO.class);
+            String userEmail = (authentication != null) ? authentication.getName() : headerEmail;
+            CommentResponseDTO response = commentService.updateComment(commentId, request, images != null ? images : new ArrayList<>(), userEmail);
 
-        return ApiResponse.<CommentResponseDTO>builder()
-                .code(1000)
-                .message("Comment updated successfully")
-                .result(response)
-                .build();
+            return ApiResponse.<CommentResponseDTO>builder()
+                    .code(1000)
+                    .message("Comment updated successfully")
+                    .result(response)
+                    .build();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse request data", e);
+        }
     }
 
     @DeleteMapping("/{commentId}")

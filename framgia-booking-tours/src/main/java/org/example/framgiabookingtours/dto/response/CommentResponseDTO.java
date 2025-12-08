@@ -17,6 +17,7 @@ public class CommentResponseDTO {
     private Long id;
     private Long reviewId;
     private String content;
+    private java.util.List<String> imageUrls;
     private LocalDateTime createdAt;
     private Long parentCommentId;
 

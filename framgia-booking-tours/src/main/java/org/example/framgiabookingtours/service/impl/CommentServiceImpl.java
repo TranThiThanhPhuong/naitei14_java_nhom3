@@ -1,5 +1,7 @@
 package org.example.framgiabookingtours.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.framgiabookingtours.dto.request.CommentRequestDTO;
@@ -15,16 +17,19 @@ import org.example.framgiabookingtours.repository.CommentRepository;
 import org.example.framgiabookingtours.repository.ReviewRepository;
 import org.example.framgiabookingtours.repository.UserRepository;
 import org.example.framgiabookingtours.service.CommentService;
+import org.example.framgiabookingtours.service.ImageUploadService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -34,10 +39,12 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final ImageUploadService imageUploadService;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
-    public CommentResponseDTO createComment(CommentRequestDTO request, String userEmail) {
+    public CommentResponseDTO createComment(CommentRequestDTO request, List<MultipartFile> images, String userEmail) {
         // Tìm user
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -63,12 +70,40 @@ public class CommentServiceImpl implements CommentService {
             }
         }
 
+        // Upload images nếu có
+        String imageUrlsJson = null;
+        if (images != null && !images.isEmpty()) {
+            List<String> imageUrls = new ArrayList<>();
+            for (MultipartFile image : images) {
+                if (image != null && !image.isEmpty()) {
+                    try {
+                        String fileName = "comment-" + UUID.randomUUID().toString() + ".jpg";
+                        String folder = "comment_images";
+                        String imageUrl = imageUploadService.uploadFile(image, fileName, folder);
+                        imageUrls.add(imageUrl);
+                    } catch (Exception e) {
+                        log.error("Failed to upload image for comment", e);
+                        throw new AppException(ErrorCode.UPLOAD_FAILED);
+                    }
+                }
+            }
+            if (!imageUrls.isEmpty()) {
+                try {
+                    imageUrlsJson = objectMapper.writeValueAsString(imageUrls);
+                } catch (Exception e) {
+                    log.error("Failed to convert image URLs to JSON", e);
+                    throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+                }
+            }
+        }
+
         // Tạo comment
         Comment comment = Comment.builder()
                 .review(review)
                 .user(user)
                 .content(request.getContent())
                 .parentComment(parentComment)
+                .imageUrls(imageUrlsJson)
                 .isDeleted(false)
                 .build();
 
@@ -80,7 +115,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public CommentResponseDTO updateComment(Long commentId, UpdateCommentRequestDTO request, String userEmail) {
+    public CommentResponseDTO updateComment(Long commentId, UpdateCommentRequestDTO request, List<MultipartFile> images, String userEmail) {
         // Tìm user
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -96,6 +131,33 @@ public class CommentServiceImpl implements CommentService {
 
         // Cập nhật content
         comment.setContent(request.getContent());
+
+        // Upload images nếu có
+        if (images != null && !images.isEmpty()) {
+            List<String> imageUrls = new ArrayList<>();
+            for (MultipartFile image : images) {
+                if (image != null && !image.isEmpty()) {
+                    try {
+                        String fileName = "comment-" + UUID.randomUUID().toString() + ".jpg";
+                        String folder = "comment_images";
+                        String imageUrl = imageUploadService.uploadFile(image, fileName, folder);
+                        imageUrls.add(imageUrl);
+                    } catch (Exception e) {
+                        log.error("Failed to upload image for comment", e);
+                        throw new AppException(ErrorCode.UPLOAD_FAILED);
+                    }
+                }
+            }
+            if (!imageUrls.isEmpty()) {
+                try {
+                    String imageUrlsJson = objectMapper.writeValueAsString(imageUrls);
+                    comment.setImageUrls(imageUrlsJson);
+                } catch (Exception e) {
+                    log.error("Failed to convert image URLs to JSON", e);
+                    throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+                }
+            }
+        }
 
         Comment updatedComment = commentRepository.save(comment);
 
@@ -207,11 +269,23 @@ public class CommentServiceImpl implements CommentService {
                 .avatarUrl(profile != null ? profile.getAvatarUrl() : null)
                 .build();
 
+        // Parse image URLs từ JSON string
+        List<String> imageUrls = null;
+        if (comment.getImageUrls() != null && !comment.getImageUrls().isEmpty()) {
+            try {
+                imageUrls = objectMapper.readValue(comment.getImageUrls(), new TypeReference<List<String>>() {});
+            } catch (Exception e) {
+                log.error("Failed to parse image URLs from JSON", e);
+                imageUrls = new ArrayList<>();
+            }
+        }
+
         // Tạo comment DTO
         return CommentResponseDTO.builder()
                 .id(comment.getId())
                 .reviewId(comment.getReview().getId())
                 .content(comment.getContent())
+                .imageUrls(imageUrls)
                 .createdAt(comment.getCreatedAt())
                 .parentCommentId(comment.getParentComment() != null ? comment.getParentComment().getId() : null)
                 .user(userInfo)
